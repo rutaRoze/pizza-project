@@ -4,6 +4,9 @@ import com.example.pizza.factory.PizzaFactory;
 import com.example.pizza.factory.ThickCrustPizzaFactory;
 import com.example.pizza.factory.ThinCrustPizzaFactory;
 import com.example.pizza.model.Pizza;
+import com.example.pizza.price.DiscountPricingStrategy;
+import com.example.pizza.price.PricingStrategy;
+import com.example.pizza.price.StandardPricingStrategy;
 import com.example.pizza.toppings.Cheese;
 import com.example.pizza.toppings.Chicken;
 import com.example.pizza.toppings.Mushrooms;
@@ -35,5 +38,19 @@ public class PizzaRunner implements CommandLineRunner {
         System.out.println("Final Pizza: " + pizza.getDescription());
         System.out.println("Total Cost: €" + pizza.getCost());
 
+        //Choose pricing policy
+        PricingStrategy pricingStrategy;
+        if (random.nextBoolean()) {
+            pricingStrategy = new StandardPricingStrategy();
+        } else {
+            pricingStrategy = new DiscountPricingStrategy(10.0);
+        }
+
+        // Apply pricing strategy
+        double finalPrice = pricingStrategy.calculatePrice(pizza);
+        String message = pricingStrategy.getPricingMessage();
+
+        System.out.println("Final Pizza: " + pizza.getDescription());
+        System.out.printf("Total Cost: €%.2f, %s%n", finalPrice, message);
     }
 }
