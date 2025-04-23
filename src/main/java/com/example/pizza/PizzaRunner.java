@@ -8,6 +8,10 @@ import com.example.pizza.factory.PizzaFactory;
 import com.example.pizza.factory.ThickCrustPizzaFactory;
 import com.example.pizza.factory.ThinCrustPizzaFactory;
 import com.example.pizza.model.Pizza;
+import com.example.pizza.observer.ClientObserver;
+import com.example.pizza.observer.KitchenObserver;
+import com.example.pizza.observer.OrderEvent;
+import com.example.pizza.observer.OrderStatus;
 import com.example.pizza.price.DiscountPricingStrategy;
 import com.example.pizza.price.PricingStrategy;
 import com.example.pizza.price.StandardPricingStrategy;
@@ -21,6 +25,11 @@ public class PizzaRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Random random = new Random();
+
+        // Set up observers
+        OrderStatus orderStatus = new OrderStatus();
+        orderStatus.registerObserver(OrderEvent.CREATED,  new KitchenObserver());
+        orderStatus.registerObserver(OrderEvent.COMPLETED, new ClientObserver());
 
         //Choose pizza base
         PizzaFactory factory = random.nextBoolean()
@@ -40,8 +49,8 @@ public class PizzaRunner implements CommandLineRunner {
         // Execute chosen topping commands
         pizza = invoker.executeAll(pizza);
 
-        System.out.println("Pizza with chosen toppings: " + pizza.getDescription());
-        System.out.printf("Total Cost: €%.2f%n", pizza.getCost());
+        orderStatus.notifyObservers(OrderEvent.CREATED, pizza.getDescription());
+        System.out.printf("Total Cost before pricing strategy: €%.2f%n", pizza.getCost());
 
         //Choose pricing policy
         PricingStrategy pricingStrategy;
@@ -54,6 +63,8 @@ public class PizzaRunner implements CommandLineRunner {
         // Apply pricing strategy
         double finalPrice = pricingStrategy.calculatePrice(pizza);
         String message = pricingStrategy.getPricingMessage();
+
+        orderStatus.notifyObservers(OrderEvent.COMPLETED, "");
 
         System.out.println("Final Pizza: " + pizza.getDescription());
         System.out.printf("Total Cost: €%.2f, %s%n", finalPrice, message);
