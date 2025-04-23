@@ -1,5 +1,9 @@
 package com.example.pizza;
 
+import com.example.pizza.command.AddCheeseCommand;
+import com.example.pizza.command.AddChickenCommand;
+import com.example.pizza.command.AddMushroomsCommand;
+import com.example.pizza.command.ToppingInvoker;
 import com.example.pizza.factory.PizzaFactory;
 import com.example.pizza.factory.ThickCrustPizzaFactory;
 import com.example.pizza.factory.ThinCrustPizzaFactory;
@@ -7,9 +11,6 @@ import com.example.pizza.model.Pizza;
 import com.example.pizza.price.DiscountPricingStrategy;
 import com.example.pizza.price.PricingStrategy;
 import com.example.pizza.price.StandardPricingStrategy;
-import com.example.pizza.toppings.Cheese;
-import com.example.pizza.toppings.Chicken;
-import com.example.pizza.toppings.Mushrooms;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -31,12 +32,16 @@ public class PizzaRunner implements CommandLineRunner {
         System.out.println("Base: " + pizza.getDescription() + " - €" + pizza.getCost());
 
         //Choose pizza toppings
-        if (random.nextBoolean()) pizza = new Cheese(pizza);
-        if (random.nextBoolean()) pizza = new Mushrooms(pizza);
-        if (random.nextBoolean()) pizza = new Chicken(pizza);
+        ToppingInvoker invoker = new ToppingInvoker();
+        if (random.nextBoolean()) invoker.addCommand(new AddCheeseCommand());
+        if (random.nextBoolean()) invoker.addCommand(new AddMushroomsCommand());
+        if (random.nextBoolean()) invoker.addCommand(new AddChickenCommand());
 
-        System.out.println("Final Pizza: " + pizza.getDescription());
-        System.out.println("Total Cost: €" + pizza.getCost());
+        // Execute chosen topping commands
+        pizza = invoker.executeAll(pizza);
+
+        System.out.println("Pizza with chosen toppings: " + pizza.getDescription());
+        System.out.printf("Total Cost: €%.2f%n", pizza.getCost());
 
         //Choose pricing policy
         PricingStrategy pricingStrategy;
