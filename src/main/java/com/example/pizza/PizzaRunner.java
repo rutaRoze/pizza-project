@@ -26,9 +26,9 @@ public class PizzaRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         Random random = new Random();
 
-        // Set up observers
+        //Set up observers
         OrderStatus orderStatus = new OrderStatus();
-        orderStatus.registerObserver(OrderEvent.CREATED,  new KitchenObserver());
+        orderStatus.registerObserver(OrderEvent.CREATED, new KitchenObserver());
         orderStatus.registerObserver(OrderEvent.COMPLETED, new ClientObserver());
 
         //Choose pizza base
@@ -36,9 +36,9 @@ public class PizzaRunner implements CommandLineRunner {
                 ? new ThinCrustPizzaFactory()
                 : new ThickCrustPizzaFactory();
 
-        Pizza pizza = factory.createPizza();
+        Pizza basePizza = factory.createPizza();
 
-        System.out.println("Base: " + pizza.getDescription() + " - €" + pizza.getCost());
+        System.out.println("Base: " + basePizza.getDescription() + " - €" + basePizza.getCost());
 
         //Choose pizza toppings
         ToppingInvoker invoker = new ToppingInvoker();
@@ -46,27 +46,30 @@ public class PizzaRunner implements CommandLineRunner {
         if (random.nextBoolean()) invoker.addCommand(new AddMushroomsCommand());
         if (random.nextBoolean()) invoker.addCommand(new AddChickenCommand());
 
-        // Execute chosen topping commands
-        pizza = invoker.executeAll(pizza);
+        //Execute chosen topping commands
+        Pizza pizzaWithTops = invoker.executeAll(basePizza);
 
-        orderStatus.notifyObservers(OrderEvent.CREATED, pizza.getDescription());
-        System.out.printf("Total Cost before pricing strategy: €%.2f%n", pizza.getCost());
+        orderStatus.notifyObservers(OrderEvent.CREATED, pizzaWithTops.getDescription());
+        System.out.printf("Total Cost before pricing strategy: €%.2f%n", pizzaWithTops.getCost());
+
+        //Remove topping
+        invoker.removeLastCommand();
+        pizzaWithTops = invoker.executeAll(basePizza);
+        orderStatus.notifyObservers(OrderEvent.CREATED, "UPDATED - " + pizzaWithTops.getDescription());
+        System.out.printf("PIZZA MODIFIED - Total Cost before pricing strategy: €%.2f%n", pizzaWithTops.getCost());
 
         //Choose pricing policy
-        PricingStrategy pricingStrategy;
-        if (random.nextBoolean()) {
-            pricingStrategy = new StandardPricingStrategy();
-        } else {
-            pricingStrategy = new DiscountPricingStrategy(10.0);
-        }
+        PricingStrategy pricingStrategy = random.nextBoolean()
+                ? new StandardPricingStrategy()
+                : new DiscountPricingStrategy(10.0);
 
-        // Apply pricing strategy
-        double finalPrice = pricingStrategy.calculatePrice(pizza);
+        //Apply pricing strategy
+        double finalPrice = pricingStrategy.calculatePrice(pizzaWithTops);
         String message = pricingStrategy.getPricingMessage();
 
         orderStatus.notifyObservers(OrderEvent.COMPLETED, "");
 
-        System.out.println("Final Pizza: " + pizza.getDescription());
+        System.out.println("Final Pizza: " + pizzaWithTops.getDescription());
         System.out.printf("Total Cost: €%.2f, %s%n", finalPrice, message);
     }
 }

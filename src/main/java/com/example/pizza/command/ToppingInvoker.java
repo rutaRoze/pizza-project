@@ -13,6 +13,12 @@ public class ToppingInvoker {
         commands.add(command);
     }
 
+    public void removeLastCommand() {
+        if (!commands.isEmpty()) {
+            commands.removeLast();
+        }
+    }
+
     public Pizza executeAll(Pizza pizza) {
         for (ToppingCommand command : commands) {
             pizza = command.execute(pizza);
